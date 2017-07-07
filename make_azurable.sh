@@ -26,11 +26,15 @@ echo "deb http://debian-archive.trafficmanager.net/debian-azure jessie main" >> 
 echo "deb-src http://debian-archive.trafficmanager.net/debian-azure jessie main" >> $AZURE_LIST
 apt-get update
 
-#install sudo
-apt-get install -y sudo
+#add dns resolution
+apt-get install dnsmasq
 
 #install parted
 apt-get install -y parted
+
+
+#install sudo
+apt-get install -y sudo
 
 #Remove any firewall restriction on port 22
 sed -i "/--dport 22/d" /etc/iptables.up.rules
