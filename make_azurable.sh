@@ -1,8 +1,9 @@
 #!/bin/bash
-
-ssh $%  << EOF
-#Install Hyper-V modules
 INIT_RAM_MODULES=/etc/initramfs-tools/modules
+AZURE_LIST=/etc/apt/sources.list.d/azure.list
+
+ssh root@$1  << EOF
+#Install Hyper-V modules
 echo "hv_vmbus" >> $INIT_RAM_MODULES
 echo "hv_storvsc" >> $INIT_RAM_MODULES
 echo "hv_blkvsc" >> $INIT_RAM_MODULES
@@ -16,10 +17,9 @@ sed -i 's|GRUB_CMDLINE_LINUX=.*|GRUB_CMDLINE_LINUX="console=tty0 console=ttyS0,1
 update-grub
 
 #update repositories
-gpg --keyserver pgpkeys.mit.edu --recv-key  06EA49E9A86CAD7F 
+gpg --keyserver pgpkeys.mit.edu --recv-key  06EA49E9A86CAD7F
 gpg -a --export 06EA49E9A86CAD7F | apt-key add -
 
-AZURE_LIST=/etc/apt/sources.list.d/azure.list
 echo "deb http://debian-archive.trafficmanager.net/debian jessie-backports main" > $AZURE_LIST
 echo "deb-src http://debian-archive.trafficmanager.net/debian jessie-backports main" >> $AZURE_LIST
 echo "deb http://debian-archive.trafficmanager.net/debian-azure jessie main" >> $AZURE_LIST
