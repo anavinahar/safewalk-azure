@@ -34,6 +34,7 @@ apt-get install -y parted
 
 #Remove any firewall restriction on port 22
 sed -i "/--dport 22/d" /etc/iptables.up.rules
+sed -i "$ i\-A INPUT -p tcp -m tcp --dport 22 -j ACCEPT" /etc/iptables.up.rules
 
 #installing waagent
 apt-get install -y waagent
