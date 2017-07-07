@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -xe
 INIT_RAM_MODULES=/etc/initramfs-tools/modules
 AZURE_LIST=/etc/apt/sources.list.d/azure.list
 
@@ -44,6 +44,6 @@ sed -i "$ i\-A INPUT -p tcp -m tcp --dport 22 -j ACCEPT" /etc/iptables.up.rules
 apt-get install -y waagent
 sudo waagent -force -deprovision
 export HISTSIZE=0
-halt
+#halt
 
 EOF
