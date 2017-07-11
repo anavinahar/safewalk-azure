@@ -84,7 +84,7 @@
         }
     },
     "variables": {
-        "safewalkgatewayVHD": "[concat('https://', parameters('storageRoot'),'.blob.core.windows.net/', resourceGroup().name,'/Gateway.vhd')]",
+        "safewalkgatewayVHD": "[concat('https://', parameters('storageRoot'),'.blob.core.windows.net/', resourceGroup().name,'/safewalkGateway.vhd')]",
         "vnetID": "[resourceId('Microsoft.Network/virtualNetworks', parameters('vNetName'))]",
         "subnetRef": "[concat(variables('vnetID'), '/subnets/', parameters('subnetName'))]",
         "vmPrefix" : "[resourceGroup().name]",
