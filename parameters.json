@@ -4,24 +4,24 @@
   "parameters": {
     
     "SafewalkVHDImageURL": {
-       "value": "https://safewalkale.blob.core.windows.net/safewalkale/"
+       "value": "https://safewalkale.blob.core.windows.net/safewalkale/safewalk.vhd"
     },
     "SafewalkGatewayVHDImageURL": {
-       "value": "https://safewalkale.blob.core.windows.net/safewalkale/"
+       "value": "https://safewalkale.blob.core.windows.net/safewalkale/safewalkGatewayRoot.vhd"
     },
     "storageRoot": {
-       "value": "safewalkale/"
+       "value": "safewalkale"
     },
     "vmUsername": {           
        "value": "ataboada"
     },
-    "vmUserPassword": {                     
+    "vmPassword": {                     
        "value": "Aledjtabu1981"                                         
     },
     "SafewalkRootPassword": {                     
        "value": "Safewalk1"                                              
     },
-    "GatewayRootPassword": {                     
+    "SafewalkGatewayRootPassword": {                     
        "value": "Safewalk1"                                              
     }
   }

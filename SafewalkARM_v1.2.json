@@ -1,0 +1,478 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "SafewalkVHDImageURL": {
+            "type": "string",
+            "metadata": {
+                "description": "The URL (within this subscription) where the Safewalk VHD image is located"
+            }
+        },
+        "SafewalkGatewayVHDImageURL": {
+            "type": "string",
+            "metadata": {
+                "description": "The URL (within this subscription) where the Safewalk Gateway VHD image is located"
+            }
+        },
+        "createVnet": {
+            "type": "bool",
+            "defaultValue": true,
+            "metadata": {
+                "description": "Do we create a Vnet"
+            }
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Azure region to deploy into. If the value is empty, the location will be the same as the resource group one"
+            }
+        },
+        "storageRoot": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of the storage account"
+            }
+        },
+        "vNetName": {
+            "type": "string",
+            "defaultValue": "mySubNet",
+            "metadata": {
+                "description": "Name of the Vnet (either new or existing)"
+            }
+        },
+        "subnetName": {
+            "type": "string",
+            "defaultValue": "mySubNet",
+            "metadata": {
+                "description": "Name of the subnet in the Vnet (either new or existing)"
+            }
+        },
+        "vNetResourceGroup": {
+            "type": "string",
+            "defaultValue": "None",
+            "metadata": {
+                "description": "Name of the resource group Vnet resides in (only needed when using existing Vnet)"
+            }
+        },
+        "vNetAddressSpace": {
+            "type": "string",
+            "defaultValue": "10.0.0.0/16",
+            "metadata": {
+                "description": "Address Space of the Vnet (either new or existing)"
+            }
+        },
+        "subnetAddressSpace": {
+            "type": "string",
+            "defaultValue": "10.0.0.0/24",
+            "metadata": {
+                "description": "Address Space of the subnet in the Vnet (either new or existing)"
+            }
+        },
+        "gatewayIP": {
+            "type": "string",
+            "defaultValue": "10.0.0.4",
+            "metadata": {
+                "description": "Safewalk gateway server IP Address (either new or existing)"
+            }
+        },
+        "serverIP": {
+            "type": "string",
+            "defaultValue": "10.0.0.5",
+            "metadata": {
+                "description": "Safewalk server IP Address (either new or existing)"
+            }
+        },
+        "vmPrefix": {
+            "type": "string",
+            "defaultValue": "safewalk",
+            "metadata": {
+                "description": "Safewalk VMs prefix"
+            }
+        },
+        "vmUsername": {
+            "type": "string",
+            "defaultValue": "swadmin",			
+            "metadata": {
+                "description": "The username for a new privlliged user that will be created in the Safewalk Server and Safewalk Gateway "
+            }
+        },		
+        "vmPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Safewalk VMs password"
+            }
+        },
+		"vmServerSize": {
+            "type": "string",
+            "defaultValue": "Standard_A2",
+            "metadata": {
+                "description": "Size of the Safewalk VM"
+            }
+        },
+        "vmGatewaySize": {
+            "type": "string",
+            "defaultValue": "Standard_A1",
+            "metadata": {
+                "description": "Size of the Safewalk VM"
+            }
+        },
+        "SafewalkRootPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "The password that will be set for the root account of the Safewalk Server"
+            }
+        },
+		
+        "SafewalkGatewayRootPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "The password that will be set for the root account of the Safewalk Gateway"
+            }
+        }
+    },
+    "variables": {
+        "vnetIDfalse": "[resourceId(parameters('vNetResourceGroup'), 'Microsoft.Network/virtualNetworks', parameters('vNetName'))]",
+        "vnetIDtrue": "[resourceId('Microsoft.Network/virtualNetworks', parameters('vNetName'))]",
+        "vnetID": "[variables(concat('vnetID', parameters('createVnet')))]",
+        "subnetRef": "[concat(variables('vnetID'), '/subnets/', parameters('subnetName'))]",
+        "sizeOfDiskInGB" :  "127",
+        "location": "[parameters('location')]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Compute/images",
+            "name": "[concat(parameters('vmPrefix'),'-server-osImage')]",
+            "apiVersion": "2016-04-30-preview",
+            "location": "[variables('location')]",
+            "properties": {
+                "storageProfile": {
+                    "osDisk": {
+                        "osType": "Linux",
+                        "osState": "Generalized",
+                        "blobUri": "[parameters('SafewalkVHDImageURL')]",
+                        "caching": "ReadWrite",
+                        "storageAccountType": "Standard_LRS",
+                        "diskSizeGB": "[variables('sizeOfDiskInGB')]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Compute/images",
+            "name": "[concat(parameters('vmPrefix'),'-gateway-osImage')]",
+            "apiVersion": "2016-04-30-preview",
+            "location": "[variables('location')]",
+            "properties": {
+                "storageProfile": {
+                    "osDisk": {
+                        "osType": "Linux",
+                        "osState": "Generalized",
+                        "blobUri": "[parameters('SafewalkGatewayVHDImageURL')]",
+                        "caching": "ReadWrite",
+                        "storageAccountType": "Standard_LRS",
+                        "diskSizeGB": "[variables('sizeOfDiskInGB')]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "name": "[concat(parameters('vmPrefix'), '-gateway-NSG')]",
+            "apiVersion": "2017-04-01",
+            "location": "[variables('location')]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "ssh",
+                        "properties": {
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "22",
+                            "sourceAddressPrefix": "[parameters('vNetAddressSpace')]",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 950,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "https",
+                        "properties": {
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "443",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 960,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "8443-8446_Outbound",
+                        "properties": {
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "8443-8446",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "[parameters('vNetAddressSpace')]",
+                            "access": "Allow",
+                            "priority": 980,
+                            "direction": "Outbound"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "name": "[concat(parameters('vmPrefix'), '-server-NSG')]",
+            "apiVersion": "2017-04-01",
+            "location": "[variables('location')]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "ssh",
+                        "properties": {
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "22",
+                            "sourceAddressPrefix": "[parameters('vNetAddressSpace')]",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 950,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "https",
+                        "properties": {
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "443",
+                            "sourceAddressPrefix": "[parameters('vNetAddressSpace')]",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 960,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "8443_Inbound",
+                        "properties": {
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "8443",
+                            "sourceAddressPrefix": "[parameters('vNetAddressSpace')]",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 990,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "8445-6_Inbound",
+                        "properties": {
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "8445-8446",
+                            "sourceAddressPrefix": "[parameters('gatewayIP')]",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 980,
+                            "direction": "Inbound"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "condition": "[parameters('createVnet')]",
+            "apiVersion": "2017-04-01",
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "[parameters('vNetName')]",
+            "location": "[variables('location')]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[parameters('vNetAddressSpace')]"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[parameters('subnetName')]",
+                        "properties": {
+                            "addressPrefix": "[parameters('subnetAddressSpace')]"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "2017-04-01",
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "[concat(parameters('vmPrefix'), '-gateway-NIC')]",
+            "location": "[variables('location')]",
+            "dependsOn": [
+                "[concat(parameters('vmPrefix'), '-public-IP')]",
+                "[parameters('vNetName')]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Static",
+                            "privateIPAddress": "[parameters('gatewayIP')]",
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat(parameters('vmPrefix'), '-public-IP'))]"
+                            },
+                            "subnet": {
+                                "id": "[variables('subnetRef')]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "2017-04-01",
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "[concat(parameters('vmPrefix'), '-server-NIC')]",
+            "location": "[variables('location')]",
+            "dependsOn": [
+                "[parameters('vNetName')]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Static",
+                            "privateIPAddress": "[parameters('serverIP')]",
+                            "subnet": {
+                                "id": "[variables('subnetRef')]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "2017-04-01",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "name": "[concat(parameters('vmPrefix'), '-public-IP')]",
+            "location": "[variables('location')]",
+            "properties": {
+                "publicIPAllocationMethod": "Dynamic"
+            }
+        },
+        {
+            "apiVersion": "2017-03-30",
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "[concat(parameters('vmPrefix'), '-gateway')]",
+            "location": "[variables('location')]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/networkInterfaces/', parameters('vmPrefix'), '-gateway-NIC')]",
+                "[concat('Microsoft.Compute/images/', parameters('vmPrefix'), '-gateway-osImage')]"
+            ],
+            "properties": {
+                "osProfile": {
+                    "computerName": "[concat(parameters('vmPrefix'), '-server')]",
+                    "adminUsername": "[parameters('vmUsername')]",
+                    "adminPassword": "[parameters('vmPassword')]"
+                },
+                "hardwareProfile": {
+                    "vmSize": "[parameters('vmGatewaySize')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "id": "[resourceId('Microsoft.Compute/images', concat(parameters('vmPrefix'), '-gateway-osImage'))]"
+                    },
+                    "osDisk": {
+                        "name": "[concat(parameters('vmPrefix'), '-gateway-os-vhd')]",
+                        "createOption": "FromImage"
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('vmPrefix'), '-gateway-NIC'))]"
+                        }
+                    ]
+                },
+                "diagnosticsProfile": {
+                    "bootDiagnostics": {
+                        "enabled": "true",
+                        "storageUri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', parameters('storageRoot')), '2016-01-01').primaryEndpoints.blob)]"
+                    }
+                }
+            }
+        },
+        {
+            "apiVersion": "2017-03-30",
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "[concat(parameters('vmPrefix'), '-server')]",
+            "location": "[variables('location')]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/networkInterfaces/', parameters('vmPrefix'), '-server-NIC')]",
+                "[concat('Microsoft.Compute/images/', parameters('vmPrefix'), '-server-osImage')]"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[parameters('vmServerSize')]"
+                },
+                "osProfile": {
+                    "computerName": "[concat(parameters('vmPrefix'), '-server')]",
+                    "adminUsername": "[parameters('vmUsername')]",
+                    "adminPassword": "[parameters('vmPassword')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "id": "[resourceId('Microsoft.Compute/images', concat(parameters('vmPrefix'), '-server-osImage'))]"
+                    },
+                    "osDisk": {
+                        "name": "[concat(parameters('vmPrefix'), '-server-os-vhd')]",
+                        "createOption": "FromImage"
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('vmPrefix'), '-server-NIC'))]"
+                        }
+                    ]
+                },
+                "diagnosticsProfile": {
+                    "bootDiagnostics": {
+                        "enabled": "true",
+                        "storageUri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', parameters('storageRoot')), '2016-01-01').primaryEndpoints.blob)]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines/extensions",
+            "name": "[concat(parameters('vmPrefix'), '-gateway/installcustomscript')]",
+            "apiVersion": "2017-03-30",
+            "location": "[variables('location')]",
+            "dependsOn": [
+                "[concat('Microsoft.Compute/virtualMachines/', parameters('vmPrefix'), '-server')]",
+                "[concat('Microsoft.Compute/virtualMachines/', parameters('vmPrefix'), '-gateway')]"
+            ],
+            "properties": {
+                "publisher": "Microsoft.Azure.Extensions",
+                "type": "CustomScript",
+                "typeHandlerVersion": "2.0",
+                "autoUpgradeMinorVersion": true,
+                "settings": {
+                    "fileUris": [
+                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/configure_gateway_custom_script.sh"
+                    ],
+                    "commandToExecute": "sh configure_gateway_custom_script.sh"
+                }
+            }
+        }
+    ]
+}
