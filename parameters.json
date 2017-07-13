@@ -2,16 +2,26 @@
   "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "storageRoot": {
+    
+    "SafewalkVHDImageURL": {
        "value": "https://safewalkale.blob.core.windows.net/safewalkale/"
+    },
+    "SafewalkGatewayVHDImageURL": {
+       "value": "https://safewalkale.blob.core.windows.net/safewalkale/"
+    },
+    "storageRoot": {
+       "value": "safewalkale/"
     },
     "vmUsername": {           
        "value": "ataboada"
     },
     "vmUserPassword": {                     
-       "value": "Aledjtabu1981"                                              
+       "value": "Aledjtabu1981"                                         
     },
-    "vmRootPassword": {                     
+    "SafewalkRootPassword": {                     
+       "value": "Safewalk1"                                              
+    },
+    "GatewayRootPassword": {                     
        "value": "Safewalk1"                                              
     }
   }
