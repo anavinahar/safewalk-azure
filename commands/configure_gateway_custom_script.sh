@@ -2,5 +2,6 @@
 
 ROOT_PASSWORD=$1
 
-set_root_password.sh $ROOT_PASSWORD
+my_dir=`dirname $0`
+$my_dir/set_root_password.sh $ROOT_PASSWORD
 
