@@ -1,6 +1,6 @@
 #Cli commands
 #serverVHD=@az1Safewalk.vhd
-gatewayVHD=../ISO/GatewayAzure.vhd
+gatewayVHD=GatewayAzure.vhd
 rgn=safewalkale
 loc=southcentralus
 #subnetName=mySubNet

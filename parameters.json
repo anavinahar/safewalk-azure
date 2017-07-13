@@ -3,7 +3,7 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "storageRoot": {
-       "value": "safewalkale"
+       "value": "https://safewalkale.blob.core.windows.net/safewalkale/"
     },
     "vmUsername": {           
        "value": "ataboada"

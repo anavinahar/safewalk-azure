@@ -1,15 +1,24 @@
-#!/bin/bash -xe
+#!/bin/bash -x
 INIT_RAM_MODULES=/etc/initramfs-tools/modules
 AZURE_LIST=/etc/apt/sources.list.d/azure.list
+#DEBIAN_DIST=jessie
+DEBIAN_DIST=wheezy
 
-ssh root@$1  << EOF
+#ssh root@$1  << EOF
+
 #Install Hyper-V modules
 echo "hv_vmbus" >> $INIT_RAM_MODULES
 echo "hv_storvsc" >> $INIT_RAM_MODULES
 echo "hv_blkvsc" >> $INIT_RAM_MODULES
 echo "hv_netvsc" >> $INIT_RAM_MODULES
 
-apt-get install -t jessie-backports hyperv-daemons
+For Debian 7 uncomment this
+if [ $DEBIAN_DIST = wheezy ]; then
+    echo "deb http://http.debian.net/debian $DEBIAN_DIST-backports main" >> /etc/apt/sources.list.d/sources.list
+    apt-get update
+fi
+
+apt-get install -t $DEBIAN_DIST-backports hyperv-daemons
 update-initramfs -u
 
 #change GRUB settings
@@ -20,21 +29,22 @@ update-grub
 gpg --keyserver pgpkeys.mit.edu --recv-key  06EA49E9A86CAD7F
 gpg -a --export 06EA49E9A86CAD7F | apt-key add -
 
-echo "deb http://debian-archive.trafficmanager.net/debian jessie-backports main" > $AZURE_LIST
-echo "deb-src http://debian-archive.trafficmanager.net/debian jessie-backports main" >> $AZURE_LIST
-echo "deb http://debian-archive.trafficmanager.net/debian-azure jessie main" >> $AZURE_LIST
-echo "deb-src http://debian-archive.trafficmanager.net/debian-azure jessie main" >> $AZURE_LIST
+echo "deb http://debian-archive.trafficmanager.net/debian $DEBIAN_DIST-backports main" > $AZURE_LIST
+echo "deb-src http://debian-archive.trafficmanager.net/debian $DEBIAN_DIST-backports main" >> $AZURE_LIST
+echo "deb http://debian-archive.trafficmanager.net/debian-azure $DEBIAN_DIST main" >> $AZURE_LIST
+echo "deb-src http://debian-archive.trafficmanager.net/debian-azure $DEBIAN_DIST main" >> $AZURE_LIST
 apt-get update
 
+
 #add dns resolution
-apt-get install dnsmasq
+apt-get install -y dnsmasq
 
 #install parted
 apt-get install -y parted
 
 
 #install sudo
-apt-get install -y sudo
+#apt-get install -y sudo
 
 #Remove any firewall restriction on port 22
 sed -i "/--dport 22/d" /etc/iptables.up.rules
@@ -47,4 +57,4 @@ sudo waagent -force -deprovision
 export HISTSIZE=0
 #halt
 
-EOF
+#EOF
