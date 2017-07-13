@@ -123,7 +123,6 @@
                 "description": "The password that will be set for the root account of the Safewalk Server"
             }
         },
-		
         "GatewayRootPassword": {
             "type": "securestring",
             "metadata": {
@@ -468,9 +467,10 @@
                 "autoUpgradeMinorVersion": true,
                 "settings": {
                     "fileUris": [
-                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/configure_gateway_custom_script.sh"
+                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/configure_gateway_custom_script.sh",
+                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/set_root_password.sh"
                     ],
-                    "commandToExecute": "['sh configure_gateway_custom_script.sh ', parameters('GatewayRootPassword')]"
+                    "commandToExecute": "[concat('sh configure_gateway_custom_script.sh ', parameters('GatewayRootPassword'))]"
                 }
             }
         },
@@ -490,9 +490,10 @@
                 "autoUpgradeMinorVersion": true,
                 "settings": {
                     "fileUris": [
-                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/configure_safewalk_custom_script.sh"
+                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/configure_safewalk_custom_script.sh",
+                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/set_root_password.sh"
                     ],
-                    "commandToExecute": "['sh configure_safewalk_custom_script.sh ', parameters('SafewalkServerRootPassword')]"
+                    "commandToExecute": "[concat('sh configure_safewalk_custom_script.sh ', parameters('SafewalkRootPassword'))]"
                 }
             }
         }
