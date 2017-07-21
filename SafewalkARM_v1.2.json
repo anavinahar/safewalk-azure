@@ -137,7 +137,8 @@
         "subnetRef": "[concat(variables('vnetID'), '/subnets/', parameters('subnetName'))]",
         "sizeOfDiskInGBSafewalk" :  "127",
 	"sizeOfDiskInGBGateway" :  "6",
-        "location": "[parameters('location')]"
+        "location": "[parameters('location')]",
+        "gatewayPublicIPName": [concat(parameters('vmPrefix'), '-public-IP')]
     },
     "resources": [
         {
@@ -315,7 +316,7 @@
             "name": "[concat(parameters('vmPrefix'), '-gateway-NIC')]",
             "location": "[variables('location')]",
             "dependsOn": [
-                "[concat(parameters('vmPrefix'), '-public-IP')]",
+                "[variables('gatewayPublicIPName')]",
                 "[parameters('vNetName')]"
             ],
             "properties": {
@@ -362,7 +363,7 @@
         {
             "apiVersion": "2017-04-01",
             "type": "Microsoft.Network/publicIPAddresses",
-            "name": "[concat(parameters('vmPrefix'), '-public-IP')]",
+            "name": "[variables('gatewayPublicIPName')]",
             "location": "[variables('location')]",
             "properties": {
                 "publicIPAllocationMethod": "Dynamic"
@@ -494,7 +495,12 @@
                         "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/configure_safewalk_custom_script.sh",
                         "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/set_root_password.sh"
                     ],
-                    "commandToExecute": "[concat('sh configure_safewalk_custom_script.sh ', parameters('SafewalkRootPassword'))]"
+ROOT_PASSWORD=$1
+GATEWAY_IP=$2
+GATEWAY_PUBLIC_IP=$3
+GATEWAY_ROOT_PASSWORD=$4
+SAFEWALK_IP=$5
+                    "commandToExecute": "[concat('sh configure_safewalk_custom_script.sh ', parameters('SafewalkRootPassword'), ' ', parameters('gatewayIP'), ' ', [reference(variables('gatewayPublicIPName')).ipAddress], ' ', parameters('GatewayRootPassword'), ' ', parameters('serverIP'))]"
                 }
             }
         }
