@@ -135,7 +135,8 @@
         "vnetIDtrue": "[resourceId('Microsoft.Network/virtualNetworks', parameters('vNetName'))]",
         "vnetID": "[variables(concat('vnetID', parameters('createVnet')))]",
         "subnetRef": "[concat(variables('vnetID'), '/subnets/', parameters('subnetName'))]",
-        "sizeOfDiskInGB" :  "127",
+        "sizeOfDiskInGBSafewalk" :  "127",
+	"sizeOfDiskInGBGateway" :  "6",
         "location": "[parameters('location')]"
     },
     "resources": [
@@ -152,7 +153,7 @@
                         "blobUri": "[parameters('SafewalkVHDImageURL')]",
                         "caching": "ReadWrite",
                         "storageAccountType": "Standard_LRS",
-                        "diskSizeGB": "[variables('sizeOfDiskInGB')]"
+                        "diskSizeGB": "[variables('sizeOfDiskInGBSafewalk')]"
                     }
                 }
             }
@@ -170,7 +171,7 @@
                         "blobUri": "[parameters('SafewalkGatewayVHDImageURL')]",
                         "caching": "ReadWrite",
                         "storageAccountType": "Standard_LRS",
-                        "diskSizeGB": "[variables('sizeOfDiskInGB')]"
+                        "diskSizeGB": "[variables('sizeOfDiskInGBGateway')]"
                     }
                 }
             }

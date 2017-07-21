@@ -12,8 +12,9 @@ echo "hv_storvsc" >> $INIT_RAM_MODULES
 echo "hv_blkvsc" >> $INIT_RAM_MODULES
 echo "hv_netvsc" >> $INIT_RAM_MODULES
 
-For Debian 7 uncomment this
+#For Debian 7 uncomment this
 if [ $DEBIAN_DIST = wheezy ]; then
+    apt-get install -f
     echo "deb http://http.debian.net/debian $DEBIAN_DIST-backports main" >> /etc/apt/sources.list.d/sources.list
     apt-get update
 fi
@@ -42,10 +43,6 @@ apt-get install -y dnsmasq
 #install parted
 apt-get install -y parted
 
-
-#install sudo
-#apt-get install -y sudo
-
 #Remove any firewall restriction on port 22
 sed -i "/--dport 22/d" /etc/iptables.up.rules
 sed -i "$ i\-A INPUT -p tcp -m tcp --dport 22 -j ACCEPT" /etc/iptables.up.rules
@@ -55,6 +52,6 @@ iptables-restore < /etc/iptables.up.rules
 apt-get install -y waagent
 sudo waagent -force -deprovision
 export HISTSIZE=0
-#halt
+halt
 
 #EOF
