@@ -470,9 +470,10 @@
                 "settings": {
                     "fileUris": [
                         "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/configure_gateway_custom_script.sh",
-                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/set_root_password.sh"
+                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/set_root_password.sh",
+                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/gateway_whitelist_safewalk_server.sh"
                     ],
-                    "commandToExecute": "[concat('sh configure_gateway_custom_script.sh ', parameters('GatewayRootPassword'))]"
+                    "commandToExecute": "[concat('sh configure_gateway_custom_script.sh ', parameters('GatewayRootPassword'), ' ', parameters('serverIP'))]"
                 }
             }
         },
@@ -483,7 +484,7 @@
             "location": "[variables('location')]",
             "dependsOn": [
                 "[concat('Microsoft.Compute/virtualMachines/', parameters('vmPrefix'), '-server')]",
-                "[concat('Microsoft.Compute/virtualMachines/', parameters('vmPrefix'), '-gateway')]"
+                "[concat('Microsoft.Compute/virtualMachines/extensions', parameters('vmPrefix'), '-gateway/installcustomscript')]", 
             ],
             "properties": {
                 "publisher": "Microsoft.Azure.Extensions",
@@ -493,13 +494,9 @@
                 "settings": {
                     "fileUris": [
                         "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/configure_safewalk_custom_script.sh",
-                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/set_root_password.sh"
+                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/set_root_password.sh",
+                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/safewalk_create_gateway.sh"
                     ],
-ROOT_PASSWORD=$1
-GATEWAY_IP=$2
-GATEWAY_PUBLIC_IP=$3
-GATEWAY_ROOT_PASSWORD=$4
-SAFEWALK_IP=$5
                     "commandToExecute": "[concat('sh configure_safewalk_custom_script.sh ', parameters('SafewalkRootPassword'), ' ', parameters('gatewayIP'), ' ', [reference(variables('gatewayPublicIPName')).ipAddress], ' ', parameters('GatewayRootPassword'), ' ', parameters('serverIP'))]"
                 }
             }
