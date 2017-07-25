@@ -8,7 +8,7 @@ SAFEWALK_IP=$5
 
 #sh configure_safewalk_custom_script.sh root 192.168.10.244 192.168.10.244 Safewalk1 192.168.10.201
 
-sh safewalk_make_partitions.sh
+#sh safewalk_make_partitions.sh
 
 my_dir=`dirname $0`
 

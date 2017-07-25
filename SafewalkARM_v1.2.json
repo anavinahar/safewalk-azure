@@ -501,7 +501,8 @@
             "location": "[variables('location')]",
             "dependsOn": [
                 "[concat('Microsoft.Compute/virtualMachines/', parameters('vmPrefix'), '-server')]",
-                "[concat('Microsoft.Compute/virtualMachines/', parameters('vmPrefix'), '-gateway')]"
+                "[concat('Microsoft.Compute/virtualMachines/', parameters('vmPrefix'), '-gateway')]",
+                "[variables('gatewayPublicIPName')]"
             ],
             "properties": {
                 "publisher": "Microsoft.Azure.Extensions",
@@ -520,7 +521,7 @@
                         "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/safewalk_make_partitions.sh",
                         "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/safewalk_renew_secrets.sh"
                     ],
-                    "commandToExecute": "[concat('sh configure_safewalk_custom_script.sh ', parameters('SafewalkRootPassword'), ' ', parameters('gatewayIP'), ' ', reference(variables('gatewayPublicIPName')).properties.ipAddress, ' ', parameters('GatewayRootPassword'), ' ', parameters('serverIP'))]"
+                    "commandToExecute": "[concat('sh configure_safewalk_custom_script.sh ', parameters('SafewalkRootPassword'), ' ', parameters('gatewayIP'), ' ', reference(variables('gatewayPublicIPName')).ipAddress, ' ', parameters('GatewayRootPassword'), ' ', parameters('serverIP'))]"
                 }
             }
         }
