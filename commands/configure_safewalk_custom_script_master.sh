@@ -11,7 +11,7 @@ SAFEWALK_IP_2=$6
 
 my_dir=`dirname $0`
 
-sh $my_dir/safewalk_make_partitions.sh
+bash $my_dir/safewalk_make_partitions.sh
 
 sh $my_dir/set_root_password.sh $ROOT_PASSWORD
 

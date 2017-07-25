@@ -393,7 +393,7 @@
             "properties": {
                 "ipConfigurations": [
                     {
-                        "name": "ipconfig1",
+                        "name": "ipconfig2",
                         "properties": {
                             "privateIPAllocationMethod": "Static",
                             "privateIPAddress": "[parameters('server2IP')]",
@@ -506,7 +506,7 @@
                         "id": "[resourceId('Microsoft.Compute/images', concat(parameters('vmPrefix'), '-server-osImage'))]"
                     },
                     "osDisk": {
-                        "name": "[concat(parameters('vmPrefix'), '-server-os-vhd')]",
+                        "name": "[concat(parameters('vmPrefix'), '-server-os-1-vhd')]",
                         "createOption": "FromImage"
                     }
                 },
@@ -531,6 +531,7 @@
             "name": "[concat(parameters('vmPrefix'), '-server-2')]",
             "location": "[variables('location')]",
             "dependsOn": [
+                "[concat('Microsoft.Compute/virtualMachines/', parameters('vmPrefix'), '-server-1')]",
                 "[concat('Microsoft.Network/networkInterfaces/', parameters('vmPrefix'), '-server-2-NIC')]",
                 "[concat('Microsoft.Compute/images/', parameters('vmPrefix'), '-server-osImage')]"
             ],
@@ -548,7 +549,7 @@
                         "id": "[resourceId('Microsoft.Compute/images', concat(parameters('vmPrefix'), '-server-osImage'))]"
                     },
                     "osDisk": {
-                        "name": "[concat(parameters('vmPrefix'), '-server-os-vhd')]",
+                        "name": "[concat(parameters('vmPrefix'), '-server-os-2-vhd')]",
                         "createOption": "FromImage"
                     }
                 },
