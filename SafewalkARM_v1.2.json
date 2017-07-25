@@ -83,11 +83,18 @@
                 "description": "Safewalk gateway server IP Address (either new or existing)"
             }
         },
-        "serverIP": {
+        "server1IP": {
             "type": "string",
             "defaultValue": "10.0.0.5",
             "metadata": {
-                "description": "Safewalk server IP Address (either new or existing)"
+                "description": "Safewalk server 1 IP Address (either new or existing)"
+            }
+        },
+        "server2IP": {
+            "type": "string",
+            "defaultValue": "10.0.0.6",
+            "metadata": {
+                "description": "Safewalk server 2 IP Address (either new or existing)"
             }
         },
         "vmPrefix": {
@@ -112,7 +119,7 @@
         },
 		"vmServerSize": {
             "type": "string",
-            "defaultValue": "Standard_A2",
+            "defaultValue": "Standard_A1",
             "metadata": {
                 "description": "Size of the Safewalk VM"
             }
@@ -355,7 +362,7 @@
         {
             "apiVersion": "2017-04-01",
             "type": "Microsoft.Network/networkInterfaces",
-            "name": "[concat(parameters('vmPrefix'), '-server-NIC')]",
+            "name": "[concat(parameters('vmPrefix'), '-server-1-NIC')]",
             "location": "[variables('location')]",
             "dependsOn": [
                 "[parameters('vNetName')]"
@@ -366,7 +373,30 @@
                         "name": "ipconfig1",
                         "properties": {
                             "privateIPAllocationMethod": "Static",
-                            "privateIPAddress": "[parameters('serverIP')]",
+                            "privateIPAddress": "[parameters('server1IP')]",
+                            "subnet": {
+                                "id": "[variables('subnetRef')]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "2017-04-01",
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "[concat(parameters('vmPrefix'), '-server-2-NIC')]",
+            "location": "[variables('location')]",
+            "dependsOn": [
+                "[parameters('vNetName')]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Static",
+                            "privateIPAddress": "[parameters('server2IP')]",
                             "subnet": {
                                 "id": "[variables('subnetRef')]"
                             }
@@ -395,7 +425,7 @@
             ],
             "properties": {
                 "osProfile": {
-                    "computerName": "[concat(parameters('vmPrefix'), '-server')]",
+                    "computerName": "[concat(parameters('vmPrefix'), '-gateway')]",
                     "adminUsername": "[parameters('vmUsername')]",
                     "adminPassword": "[parameters('vmPassword')]"
                 },
@@ -432,7 +462,8 @@
                     "apiVersion": "2017-03-30",
                     "location": "[variables('location')]",
                     "dependsOn": [
-                        "[concat('Microsoft.Compute/virtualMachines/', parameters('vmPrefix'), '-server')]",
+                        "[concat('Microsoft.Compute/virtualMachines/', parameters('vmPrefix'), '-server-1')]",
+                        "[concat('Microsoft.Compute/virtualMachines/', parameters('vmPrefix'), '-server-2')]",
                         "[concat('Microsoft.Compute/virtualMachines/', parameters('vmPrefix'), '-gateway')]"
                     ],
                     "properties": {
@@ -446,7 +477,7 @@
                                 "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/set_root_password.sh",
                                 "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/gateway_whitelist_safewalk_server.sh"
                             ],
-                            "commandToExecute": "[concat('sh configure_gateway_custom_script.sh ', parameters('GatewayRootPassword'), ' ', parameters('serverIP'))]"
+                            "commandToExecute": "[concat('sh configure_gateway_custom_script.sh ', parameters('GatewayRootPassword'), ' ', parameters('server1IP'))]"
                         }
                     }
                 }
@@ -455,10 +486,10 @@
         {
             "apiVersion": "2017-03-30",
             "type": "Microsoft.Compute/virtualMachines",
-            "name": "[concat(parameters('vmPrefix'), '-server')]",
+            "name": "[concat(parameters('vmPrefix'), '-server-1')]",
             "location": "[variables('location')]",
             "dependsOn": [
-                "[concat('Microsoft.Network/networkInterfaces/', parameters('vmPrefix'), '-server-NIC')]",
+                "[concat('Microsoft.Network/networkInterfaces/', parameters('vmPrefix'), '-server-1-NIC')]",
                 "[concat('Microsoft.Compute/images/', parameters('vmPrefix'), '-server-osImage')]"
             ],
             "properties": {
@@ -466,7 +497,7 @@
                     "vmSize": "[parameters('vmServerSize')]"
                 },
                 "osProfile": {
-                    "computerName": "[concat(parameters('vmPrefix'), '-server')]",
+                    "computerName": "[concat(parameters('vmPrefix'), '-server-1')]",
                     "adminUsername": "[parameters('vmUsername')]",
                     "adminPassword": "[parameters('vmPassword')]"
                 },
@@ -482,7 +513,49 @@
                 "networkProfile": {
                     "networkInterfaces": [
                         {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('vmPrefix'), '-server-NIC'))]"
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('vmPrefix'), '-server-1-NIC'))]"
+                        }
+                    ]
+                },
+                "diagnosticsProfile": {
+                    "bootDiagnostics": {
+                        "enabled": "true",
+                        "storageUri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', parameters('storageRoot')), '2016-01-01').primaryEndpoints.blob)]"
+                    }
+                }
+            }
+        },
+        {
+            "apiVersion": "2017-03-30",
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "[concat(parameters('vmPrefix'), '-server-2')]",
+            "location": "[variables('location')]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/networkInterfaces/', parameters('vmPrefix'), '-server-2-NIC')]",
+                "[concat('Microsoft.Compute/images/', parameters('vmPrefix'), '-server-osImage')]"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[parameters('vmServerSize')]"
+                },
+                "osProfile": {
+                    "computerName": "[concat(parameters('vmPrefix'), '-server-2')]",
+                    "adminUsername": "[parameters('vmUsername')]",
+                    "adminPassword": "[parameters('vmPassword')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "id": "[resourceId('Microsoft.Compute/images', concat(parameters('vmPrefix'), '-server-osImage'))]"
+                    },
+                    "osDisk": {
+                        "name": "[concat(parameters('vmPrefix'), '-server-os-vhd')]",
+                        "createOption": "FromImage"
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('vmPrefix'), '-server-2-NIC'))]"
                         }
                     ]
                 },
@@ -496,11 +569,11 @@
         },
         {
             "type": "Microsoft.Compute/virtualMachines/extensions",
-            "name": "[concat(parameters('vmPrefix'), '-server/installcustomscript')]",
+            "name": "[concat(parameters('vmPrefix'), '-server-1/installcustomscript')]",
             "apiVersion": "2017-03-30",
             "location": "[variables('location')]",
             "dependsOn": [
-                "[concat('Microsoft.Compute/virtualMachines/', parameters('vmPrefix'), '-server')]",
+                "[concat('Microsoft.Compute/virtualMachines/', parameters('vmPrefix'), '-server-1')]",
                 "[concat('Microsoft.Compute/virtualMachines/', parameters('vmPrefix'), '-gateway')]",
                 "[variables('gatewayPublicIPName')]"
             ],
@@ -511,7 +584,7 @@
                 "autoUpgradeMinorVersion": true,
                 "settings": {
                     "fileUris": [
-                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/configure_safewalk_custom_script.sh",
+                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/configure_safewalk_custom_script_master.sh",
                         "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/set_root_password.sh",
                         "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/safewalk_create_gateway.sh",
                         "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/safewalk_set_admin_password.sh",
@@ -521,7 +594,38 @@
                         "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/safewalk_make_partitions.sh",
                         "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/safewalk_renew_secrets.sh"
                     ],
-                    "commandToExecute": "[concat('sh configure_safewalk_custom_script.sh ', parameters('SafewalkRootPassword'), ' ', parameters('gatewayIP'), ' ', reference(variables('gatewayPublicIPName')).ipAddress, ' ', parameters('GatewayRootPassword'), ' ', parameters('serverIP'))]"
+                    "commandToExecute": "[concat('sh configure_safewalk_custom_script_master.sh ', parameters('SafewalkRootPassword'), ' ', parameters('gatewayIP'), ' ', reference(variables('gatewayPublicIPName')).ipAddress, ' ', parameters('GatewayRootPassword'), ' ', parameters('server1IP'), ' ', parameters('server2IP'))]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines/extensions",
+            "name": "[concat(parameters('vmPrefix'), '-server-2/installcustomscript')]",
+            "apiVersion": "2017-03-30",
+            "location": "[variables('location')]",
+            "dependsOn": [
+                "[concat('Microsoft.Compute/virtualMachines/', parameters('vmPrefix'), '-server-2')]",
+                "[concat('Microsoft.Compute/virtualMachines/', parameters('vmPrefix'), '-gateway')]",
+                "[variables('gatewayPublicIPName')]"
+            ],
+            "properties": {
+                "publisher": "Microsoft.Azure.Extensions",
+                "type": "CustomScript",
+                "typeHandlerVersion": "2.0",
+                "autoUpgradeMinorVersion": true,
+                "settings": {
+                    "fileUris": [
+                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/configure_safewalk_custom_script_slave.sh",
+                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/set_root_password.sh",
+                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/safewalk_create_gateway.sh",
+                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/safewalk_set_admin_password.sh",
+                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/safewalk_set_admin_password.sh",
+                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/safewalk_bdr_join.sh",
+                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/safewalk_bdr_create.sh",
+                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/safewalk_make_partitions.sh",
+                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/safewalk_renew_secrets.sh"
+                    ],
+                    "commandToExecute": "[concat('sh configure_safewalk_custom_script_master.sh ', parameters('SafewalkRootPassword'), ' ', parameters('gatewayIP'), ' ', reference(variables('gatewayPublicIPName')).ipAddress, ' ', parameters('GatewayRootPassword'), ' ', parameters('server1IP'), ' ', parameters('server2IP'))]"
                 }
             }
         }
