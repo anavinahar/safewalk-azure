@@ -512,7 +512,13 @@
                     "fileUris": [
                         "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/configure_safewalk_custom_script.sh",
                         "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/set_root_password.sh",
-                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/safewalk_create_gateway.sh"
+                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/safewalk_create_gateway.sh",
+                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/safewalk_set_admin_password.sh",
+                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/safewalk_set_admin_password.sh",
+                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/safewalk_bdr_join.sh",
+                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/safewalk_bdr_create.sh",
+                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/safewalk_make_partitions.sh",
+                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/safewalk_renew_secrets.sh"
                     ],
                     "commandToExecute": "[concat('sh configure_safewalk_custom_script.sh ', parameters('SafewalkRootPassword'), ' ', parameters('gatewayIP'), ' ', reference(variables('gatewayPublicIPName')).properties.ipAddress, ' ', parameters('GatewayRootPassword'), ' ', parameters('serverIP'))]"
                 }
