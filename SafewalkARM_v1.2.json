@@ -69,6 +69,13 @@
                 "description": "Address Space of the subnet in the Vnet (either new or existing)"
             }
         },
+        "subnetAddressSpaceDMZ": {
+            "type": "string",
+            "defaultValue": "10.0.1.0/24",
+            "metadata": {
+                "description": "Address Space of the DMZ subnet in the Vnet (either new or existing)"
+            }
+        },
         "gatewayIP": {
             "type": "string",
             "defaultValue": "10.0.0.4",
@@ -135,10 +142,12 @@
         "vnetIDtrue": "[resourceId('Microsoft.Network/virtualNetworks', parameters('vNetName'))]",
         "vnetID": "[variables(concat('vnetID', parameters('createVnet')))]",
         "subnetRef": "[concat(variables('vnetID'), '/subnets/', parameters('subnetName'))]",
+        "subnetNameDMZ": "[concat(parameters('subnetName'), '-DMZ')]",
+        "subnetDMZRef": "[concat(variables('vnetID'), '/subnets/', variables('subnetNameDMZ'))]",
         "sizeOfDiskInGBSafewalk" :  "127",
 	"sizeOfDiskInGBGateway" :  "6",
         "location": "[parameters('location')]",
-        "gatewayPublicIPName": [concat(parameters('vmPrefix'), '-public-IP')]
+        "gatewayPublicIPName": "[concat(parameters('vmPrefix'), '-public-IP')]"
     },
     "resources": [
         {
@@ -306,6 +315,12 @@
                         "properties": {
                             "addressPrefix": "[parameters('subnetAddressSpace')]"
                         }
+                    },
+                    {
+                        "name": "[variables('subnetNameDMZ')]",
+                        "properties": {
+                            "addressPrefix": "[parameters('subnetAddressSpaceDMZ')]"
+                        }
                     }
                 ]
             }
@@ -409,7 +424,33 @@
                         "storageUri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', parameters('storageRoot')), '2016-01-01').primaryEndpoints.blob)]"
                     }
                 }
-            }
+            },
+            "resources":[
+                {
+                    "type": "Microsoft.Compute/virtualMachines/extensions",
+                    "name": "[concat(parameters('vmPrefix'), '-gateway/installcustomscript')]",
+                    "apiVersion": "2017-03-30",
+                    "location": "[variables('location')]",
+                    "dependsOn": [
+                        "[concat('Microsoft.Compute/virtualMachines/', parameters('vmPrefix'), '-server')]",
+                        "[concat('Microsoft.Compute/virtualMachines/', parameters('vmPrefix'), '-gateway')]"
+                    ],
+                    "properties": {
+                        "publisher": "Microsoft.Azure.Extensions",
+                        "type": "CustomScript",
+                        "typeHandlerVersion": "2.0",
+                        "autoUpgradeMinorVersion": true,
+                        "settings": {
+                            "fileUris": [
+                                "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/configure_gateway_custom_script.sh",
+                                "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/set_root_password.sh",
+                                "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/gateway_whitelist_safewalk_server.sh"
+                            ],
+                            "commandToExecute": "[concat('sh configure_gateway_custom_script.sh ', parameters('GatewayRootPassword'), ' ', parameters('serverIP'))]"
+                        }
+                    }
+                }
+            ]
         },
         {
             "apiVersion": "2017-03-30",
@@ -455,7 +496,7 @@
         },
         {
             "type": "Microsoft.Compute/virtualMachines/extensions",
-            "name": "[concat(parameters('vmPrefix'), '-gateway/installcustomscript')]",
+            "name": "[concat(parameters('vmPrefix'), '-server/installcustomscript')]",
             "apiVersion": "2017-03-30",
             "location": "[variables('location')]",
             "dependsOn": [
@@ -469,35 +510,11 @@
                 "autoUpgradeMinorVersion": true,
                 "settings": {
                     "fileUris": [
-                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/configure_gateway_custom_script.sh",
-                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/set_root_password.sh",
-                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/gateway_whitelist_safewalk_server.sh"
-                    ],
-                    "commandToExecute": "[concat('sh configure_gateway_custom_script.sh ', parameters('GatewayRootPassword'), ' ', parameters('serverIP'))]"
-                }
-            }
-        },
-        {
-            "type": "Microsoft.Compute/virtualMachines/extensions",
-            "name": "[concat(parameters('vmPrefix'), '-server/installcustomscript')]",
-            "apiVersion": "2017-03-30",
-            "location": "[variables('location')]",
-            "dependsOn": [
-                "[concat('Microsoft.Compute/virtualMachines/', parameters('vmPrefix'), '-server')]",
-                "[concat('Microsoft.Compute/virtualMachines/extensions', parameters('vmPrefix'), '-gateway/installcustomscript')]", 
-            ],
-            "properties": {
-                "publisher": "Microsoft.Azure.Extensions",
-                "type": "CustomScript",
-                "typeHandlerVersion": "2.0",
-                "autoUpgradeMinorVersion": true,
-                "settings": {
-                    "fileUris": [
                         "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/configure_safewalk_custom_script.sh",
                         "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/set_root_password.sh",
                         "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/safewalk_create_gateway.sh"
                     ],
-                    "commandToExecute": "[concat('sh configure_safewalk_custom_script.sh ', parameters('SafewalkRootPassword'), ' ', parameters('gatewayIP'), ' ', [reference(variables('gatewayPublicIPName')).ipAddress], ' ', parameters('GatewayRootPassword'), ' ', parameters('serverIP'))]"
+                    "commandToExecute": "[concat('sh configure_safewalk_custom_script.sh ', parameters('SafewalkRootPassword'), ' ', parameters('gatewayIP'), ' ', reference(variables('gatewayPublicIPName')).properties.ipAddress, ' ', parameters('GatewayRootPassword'), ' ', parameters('serverIP'))]"
                 }
             }
         }

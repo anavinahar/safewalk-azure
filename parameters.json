@@ -4,13 +4,13 @@
   "parameters": {
     
     "SafewalkVHDImageURL": {
-       "value": "https://safewalkale.blob.core.windows.net/safewalkale/safewalk.vhd"
+       "value": "https://safewalk1.blob.core.windows.net/safewalk1/Safewalk.vhd"
     },
     "SafewalkGatewayVHDImageURL": {
-       "value": "https://safewalkale.blob.core.windows.net/safewalkale/safewalkGatewayRoot.vhd"
+       "value": "https://safewalk1.blob.core.windows.net/safewalk1/Gateway.vhd"
     },
     "storageRoot": {
-       "value": "safewalkale"
+       "value": "safewalk1"
     },
     "vmUsername": {           
        "value": "ataboada"

@@ -50,6 +50,8 @@ iptables-restore < /etc/iptables.up.rules
 
 #installing waagent
 apt-get install -y waagent
+sed -i 's|ResourceDisk.EnableSwap=n|ResourceDisk.EnableSwap=y|' /etc/waagent.conf
+sed -i 's|ResourceDisk.SwapSizeMB=0|ResourceDisk.SwapSizeMB=2048|' /etc/waagent.conf
 sudo waagent -force -deprovision
 export HISTSIZE=0
 halt
