@@ -36,14 +36,14 @@
         },
         "vNetName": {
             "type": "string",
-            "defaultValue": "mySubNet",
+            "defaultValue": "myVirtualNet",
             "metadata": {
                 "description": "Name of the Vnet (either new or existing)"
             }
         },
         "subnetName": {
             "type": "string",
-            "defaultValue": "mySubNet",
+            "defaultValue": "MySubNet",
             "metadata": {
                 "description": "Name of the subnet in the Vnet (either new or existing)"
             }
@@ -78,7 +78,7 @@
         },
         "gatewayIP": {
             "type": "string",
-            "defaultValue": "10.0.0.4",
+            "defaultValue": "10.0.1.4",
             "metadata": {
                 "description": "Safewalk gateway server IP Address (either new or existing)"
             }
@@ -152,7 +152,7 @@
         "subnetNameDMZ": "[concat(parameters('subnetName'), '-DMZ')]",
         "subnetDMZRef": "[concat(variables('vnetID'), '/subnets/', variables('subnetNameDMZ'))]",
         "sizeOfDiskInGBSafewalk" :  "127",
-	"sizeOfDiskInGBGateway" :  "6",
+	    "sizeOfDiskInGBGateway" :  "6",
         "location": "[parameters('location')]",
         "gatewayPublicIPName": "[concat(parameters('vmPrefix'), '-public-IP')]"
     },
@@ -352,7 +352,7 @@
                                 "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat(parameters('vmPrefix'), '-public-IP'))]"
                             },
                             "subnet": {
-                                "id": "[variables('subnetRef')]"
+                                "id": "[variables('subnetDMZRef')]"
                             }
                         }
                     }
@@ -624,9 +624,10 @@
                         "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/safewalk_bdr_join.sh",
                         "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/safewalk_bdr_create.sh",
                         "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/safewalk_make_partitions.sh",
-                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/safewalk_renew_secrets.sh"
+                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/safewalk_renew_secrets.sh",
+                        "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/bdr_join_node"
                     ],
-                    "commandToExecute": "[concat('sh configure_safewalk_custom_script_slave.sh ', parameters('SafewalkRootPassword'), ' ', parameters('gatewayIP'), ' ', reference(variables('gatewayPublicIPName')).ipAddress, ' ', parameters('GatewayRootPassword'), ' ', parameters('server1IP'), ' ', parameters('server2IP'))]"
+                    "commandToExecute": "[concat('sh configure_safewalk_custom_script_slave.sh ', parameters('SafewalkRootPassword'), ' ', parameters('gatewayIP'), ' ', reference(concat('Microsoft.Network/publicIPAddresses/', variables('gatewayPublicIPName')), '2017-04-01').ipAddress, ' ', parameters('GatewayRootPassword'), ' ', parameters('server1IP'), ' ', parameters('server2IP'))]"
                 }
             }
         }

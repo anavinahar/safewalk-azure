@@ -1,0 +1,91 @@
+#!/bin/bash
+
+echo "configuring postgres for bdr replication"
+
+POSTGRES_VERSION=9.4
+POSTGRES_CONF=/etc/postgresql/$POSTGRES_VERSION/main/postgresql.conf
+POSTGRES_HBA=/etc/postgresql/$POSTGRES_VERSION/main/pg_hba.conf
+POSTGRES_DATA_DIR=/var/lib/postgresql/$POSTGRES_VERSION/main/
+INIT_COPY_COMMAND=/usr/lib/postgresql/$POSTGRES_VERSION/bin/bdr_init_copy
+PG_BASEBASCKUP_COMMAND=/usr/lib/postgresql/9.4/bin/pg_basebackup
+
+sed -i "s|.*listen_addresses.*=.*|listen_addresses='*'|" $POSTGRES_CONF
+sed -i "s|.*wal_level.*=.*|wal_level=logical|" $POSTGRES_CONF
+sed -i "s|.*max_connections.*=.*|max_connections=100|" $POSTGRES_CONF
+sed -i "s|.*max_wal_senders.*=.*|max_wal_senders=10|" $POSTGRES_CONF
+#!/bin/sh -ex
+sed -i "s|.*max_replication_slots.*=.*|max_replication_slots=10|" $POSTGRES_CONF
+sed -i "s|.*max_worker_processes.*=.*|max_worker_processes=10|" $POSTGRES_CONF
+
+su - postgres<<EOF
+pg_dump safewalk-server --inserts --schema repmgr_safewalk_cluster > safewalk-server-metadata.sql
+pg_dump safewalk-server --inserts > safewalk-server.sql
+pg_dump safewalk-web --inserts > safewalk-web.sql
+EOF
+
+service apache2 stop
+service supervisor stop
+service postgresql stop
+
+rm -rf $POSTGRES_DATA_DIR/*
+su - postgres<<EOF
+echo "Doing backup from master..."
+$PG_BASEBASCKUP_COMMAND -h $2 -p 5432 -U postgres -X stream -D $POSTGRES_DATA_DIR -P -v
+
+echo "initializing replica system"
+$INIT_COPY_COMMAND -d "host=$2 dbname=safewalk-server port=5432" -U postgres --local-dbname="host=$1 dbname=safewalk-server port=5432" --replication-sets=safewalk --postgresql-conf=$POSTGRES_CONF --hba-conf=$POSTGRES_HBA -n $1 -D $POSTGRES_DATA_DIR -v
+
+#echo "Configuring replica sets"
+#echo "SELECT 'SELECT bdr.table_set_replication_sets(''' || table_schema || '.' || table_name || ''', ''{safewalk}'');' FROM information_schema.tables WHERE table_schema='public' and table_name not like ALL(ARRAY['core_ha%', 'gaia_radius_interface%']) and table_name != ALL (ARRAY['django_session', 'core_organizationidentity']);" > safewalk_replication_set.sql
+#psql safewalk-server < safewalk_replication_set.sql | sed '1,2d' | head -n -2 | psql safewalk-server
+
+echo "waiting for remote node configuration ..."
+sleep 10
+
+#echo "Update replication sets records"
+#psql safewalk-server -c "update bdr.bdr_connections set conn_replication_sets='{safewalk}';"
+#psql safewalk-server -h $2 -U postgres -c "update bdr.bdr_connections set conn_replication_sets='{safewalk}';"
+
+echo "Alter sequences to use global sync"
+psql safewalk-server -c "SELECT 'ALTER SEQUENCE ' || c.relname || ' USING bdr;' from pg_statio_all_sequences c WHERE c.schemaname='public' and c.relname not like ALL(ARRAY['core_ha%', 'gaia_radius_interface%']) and c.relname != ALL (ARRAY['django_session', 'core_organizationidentity'])" | sed '1,2d' | head -n -2 | psql safewalk-server
+EOF
+
+
+
+
+
+#su - postgres -c "dropdb safewalk-server;dropdb safewalk-web"
+#su - postgres -c "createdb safewalk-server -O safewalkserver;createdb safewalk-web -O safewalkserver"
+
+#su - postgres<<EOF
+#psql safewalk-server -c "CREATE EXTENSION btree_gist;
+#       CREATE EXTENSION bdr;"
+#psql safewalk-web -c "CREATE EXTENSION btree_gist;
+#       CREATE EXTENSION bdr;"
+#EOF
+
+#HOSTNAME=$(hostname)
+#IP=$(get_ip)
+
+#registering the node
+#su - postgres<<EOF
+
+#psql safewalk-server -c "SELECT bdr.bdr_group_join(
+#    local_node_name :='$IP',
+#    node_external_dsn :='host=$1 port=5432 dbname=safewalk-server',
+#    join_using_dsn := 'host=$2 port=5432 dbname=safewalk-server'
+#);
+#SELECT bdr.bdr_node_join_wait_for_ready();"
+
+#psql safewalk-web -c "SELECT bdr.bdr_group_join(
+#    local_node_name :='$IP',
+#    node_external_dsn :='host=$1 port=5432 dbname=safewalk-web',
+#    join_using_dsn := 'host=$2 port=5432 dbname=safewalk-web'
+#);
+#SELECT bdr.bdr_node_join_wait_for_ready();"
+
+#EOF
+service apache2 start
+service supervisor start
+service postgresql restart
+echo "done!"
