@@ -626,7 +626,7 @@
                         "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/safewalk_make_partitions.sh",
                         "https://raw.githubusercontent.com/altipeak/safewalk-azure/master/commands/safewalk_renew_secrets.sh"
                     ],
-                    "commandToExecute": "[concat('sh configure_safewalk_custom_script_master.sh ', parameters('SafewalkRootPassword'), ' ', parameters('gatewayIP'), ' ', reference(variables('gatewayPublicIPName')).ipAddress, ' ', parameters('GatewayRootPassword'), ' ', parameters('server1IP'), ' ', parameters('server2IP'))]"
+                    "commandToExecute": "[concat('sh configure_safewalk_custom_script_slave.sh ', parameters('SafewalkRootPassword'), ' ', parameters('gatewayIP'), ' ', reference(variables('gatewayPublicIPName')).ipAddress, ' ', parameters('GatewayRootPassword'), ' ', parameters('server1IP'), ' ', parameters('server2IP'))]"
                 }
             }
         }
